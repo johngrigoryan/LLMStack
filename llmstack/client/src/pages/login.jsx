@@ -7,7 +7,7 @@ import Button from "@mui/material/Button";
 import Container from "@mui/material/Container";
 import Paper from "@mui/material/Paper";
 import { styled } from "@mui/system";
-import { postData } from "./dataUtil";
+import { postData, getCookie } from "./dataUtil";
 
 import logo from "../assets/llmstack-logo.svg";
 
@@ -42,7 +42,6 @@ export default function LoginPage() {
         } else {
           window.location.href = "/";
         }
-        
       },
     );
   };

@@ -23,10 +23,11 @@ import {
   SettingsOutlined,
   SourceOutlined,
   ScheduleOutlined,
+  LabelIcon,
 } from "@mui/icons-material";
 import { onLogoutClick } from "./logout";
 import { LoggedOutModal } from "./LoggedOutModal";
-
+import LabelOutlinedIcon from "@mui/icons-material/LabelOutlined";
 const logo = require(`../assets/${
   process.env.REACT_APP_SITE_NAME
     ? process.env.REACT_APP_SITE_NAME.toLowerCase()
@@ -65,6 +66,7 @@ function getNavItemIcon(itemLabel) {
     Data: <SourceOutlined />,
     Schedule: <ScheduleOutlined />,
     Organization: <CorporateFareOutlined />,
+    LabeledData: <LabelOutlinedIcon />,
   };
   return iconMap[itemLabel];
 }

@@ -21,15 +21,22 @@ const menuItems = [
     label: "Playground",
     link: "/playground",
   },
+
   {
     key: "6",
     label: "Discover",
     link: "/hub",
   },
+
   {
     key: "7",
     label: "Data",
     link: "/data",
+  },
+  {
+    key: "2",
+    label: "LabeledData",
+    link: "/label",
   },
   {
     key: "3",

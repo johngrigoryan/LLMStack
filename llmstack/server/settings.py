@@ -29,9 +29,9 @@ PLAYWRIGHT_URL = f'ws://{RUNNER_HOST}:{RUNNER_PLAYWRIGHT_PORT}'
 
 CSRF_TRUSTED_ORIGINS = os.getenv(
     'CSRF_TRUSTED_ORIGINS',
-    f'http://127.0.0.1:{LLMSTACK_PORT},http://localhost:{LLMSTACK_PORT}',
+    f'http://127.0.0.1:{LLMSTACK_PORT},http://localhost:{LLMSTACK_PORT},http://localhost:3001/,http://localhost:3001,http://127.0.0.1:3001',
 ).split(',')
-
+print(CSRF_TRUSTED_ORIGINS)
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 CIPHER_KEY_SALT = os.getenv('CIPHER_KEY_SALT', None)

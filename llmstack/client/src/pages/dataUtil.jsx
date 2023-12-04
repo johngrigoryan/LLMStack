@@ -1,4 +1,4 @@
-const getCookie = (name) => {
+export const getCookie = (name) => {
   const cookieValue = document.cookie
     .split(";")
     .find((cookie) => cookie.trim().startsWith(`${name}=`));

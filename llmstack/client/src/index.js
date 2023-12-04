@@ -27,6 +27,7 @@ const DataPage = lazy(() => import("./pages/data"));
 const Discover = lazy(() => import("./pages/discover"));
 const SchedulePage = lazy(() => import("./pages/schedule"));
 const AddAppRunSchedulePage = lazy(() => import("./pages/AddAppRunSchedule"));
+const LabeledDataPage = lazy(() => import("./pages/LabeledData"));
 const AddDatasourceRefreshSchedulePage = lazy(() =>
   import("./pages/AddDatasourceRefreshSchedule"),
 );
@@ -47,6 +48,15 @@ router = createBrowserRouter([
     element: (
       <App>
         <AppStudioPage />
+      </App>
+    ),
+    errorElement: <ErrorPage />,
+  },
+  {
+    path: "/label",
+    element: (
+      <App>
+        <LabeledDataPage />
       </App>
     ),
     errorElement: <ErrorPage />,
@@ -309,7 +319,7 @@ router = createBrowserRouter([
     element: <SignupPage />,
   },
 ]);
-
+console.log(process.env.REACT_APP_API_SERVER);
 root.render(
   <React.StrictMode>
     <RecoilRoot>
