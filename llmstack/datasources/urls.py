@@ -52,4 +52,24 @@ urlpatterns = [
         'api/datasource_entries/<str:uid>/resync',
         apis.DataSourceEntryViewSet.as_view({'post': 'resync'}),
     ),
+
+    # Data source labels
+    path(
+        'api/datasource_labels',
+        apis.DataSourceLabelsViewSet.as_view({'get': 'get'}),
+    ),
+    path(
+        'api/datasource_labels/<str:uid>',
+        apis.DataSourceLabelsViewSet.as_view({'get': 'get', 'delete': 'delete', 'put': 'put'}),
+    ),
+    path(
+        'api/datasource_labels/<str:uid>/text_content',
+        apis.DataSourceLabelsViewSet.as_view({'get': 'getTextContent'}),
+    ),
+    path(
+        'api/datasource_labels',
+        apis.DataSourceLabelsViewSet.as_view({'post': 'post'}),
+    ),
 ]
+    
+

@@ -144,6 +144,41 @@ export function AppTemplatesList() {
             </Card>
           </div>
         ))}
+        <div
+          style={{ maxWidth: "300px", cursor: "pointer" }}
+          onClick={() => {
+            // navigate(`/apps/templates/fsmbot`);
+          }}
+        >
+          <Card
+            sx={{
+              width: 200,
+              height: 150,
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "baseline",
+            }}
+          >
+            <CardContent sx={{ padding: "10px" }}>
+              <Stack direction="column" spacing={1}>
+                <Typography
+                  variant="subtitle1"
+                  color="text.secondary"
+                  style={{
+                    fontFamily: "Lato, sans-serif",
+                    fontWeight: "bold",
+                  }}
+                >
+                  Custom FSM Chatbot
+                </Typography>
+
+                <Typography variant="caption" color="text.secondary">
+                  Create a custom FSM chatbot
+                </Typography>
+              </Stack>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </Stack>
   );

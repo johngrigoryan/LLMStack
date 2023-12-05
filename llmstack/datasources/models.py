@@ -77,6 +77,7 @@ class DataSource(models.Model):
     config = models.JSONField(
         default=dict, help_text='Config for the data source',
     )
+    
     created_at = models.DateTimeField(
         help_text='Time when the data source was created', default=now,
     )
@@ -132,3 +133,38 @@ class DataSourceEntry(models.Model):
         elif self.datasource.visibility == DataSourceVisibility.ORGANIZATION:
             return self.datasource.owner == user or Profile.objects.get(user=self.datasource.owner).organization == Profile.objects.get(user=user).organization
         return False
+
+class DataSourceLabels(models.Model):
+    """
+    Data source with labels
+    """
+    uuid = models.UUIDField(
+        default=uuid.uuid4, editable=False, help_text='UUID of the data source',
+    )
+    data_source = models.ForeignKey(
+        DataSource, on_delete=models.CASCADE, help_text='Data source',
+    )
+    labels_name = models.CharField(
+        max_length=100, help_text='Name of the data source labels', blank=True, null=True,
+    )
+    owner = models.ForeignKey(
+        User, on_delete=models.DO_NOTHING, help_text='Owner of the data source labels',
+    )
+    data_source_name = models.CharField(
+        max_length=100, help_text='Name of the data source', blank=True, null=True,
+    )
+    labels = models.JSONField(
+        default=dict, help_text='Labels for the data source',
+    )
+    variables = models.JSONField(
+        default=dict, help_text='Variables for the data source', blank=True, null=True,
+    )
+    created_at = models.DateTimeField(
+        help_text='Time when the data source was created', default=now,
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True, help_text='Time when the data source was updated',
+    )
+
+    def __str__(self):
+        return self.datasource.name + ' - ' + self.label

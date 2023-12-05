@@ -314,9 +314,9 @@ export default function DataPage() {
               <IconButton
                 disabled={!row.isUserOwned}
                 onClick={() => {
-                  setModalTitle("Add New Data Entry");
-                  setSelectedDataSource(row);
-                  setAddDataSourceModalOpen(true);
+                  // setModalTitle("Add New Data Entry");
+                  // setSelectedDataSource(row);
+                  // setAddDataSourceModalOpen(true);
                 }}
               >
                 <AddOutlined />

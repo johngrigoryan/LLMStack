@@ -7,13 +7,14 @@ import {
   Divider,
   Drawer,
   Stack,
+  TextField,
 } from "@mui/material";
 
 import { axios } from "../../data/axios";
 import TextSelector from "text-selection-react";
 import TextAnnotator from "../TextAnotater";
-const TAGS = ["GUIDE", "TROUBLESHOOTING", "ERROR", "SOLUTION"];
-const TAG_COLORS = {
+export const TAGS = ["GUIDE", "TROUBLESHOOTING", "ERROR", "SOLUTION"];
+export const TAG_COLORS = {
   GUIDE: "#dce391",
   TROUBLESHOOTING: "#84d2ff",
   ERROR: "#c83f37",
@@ -34,10 +35,10 @@ function DataSourceEntryContent({ onCancel, dataSourceEntry, open }) {
   const [data, setData] = useState(null);
   const [metadata, setMetadata] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [name, setName] = useState(`label-${Date.now()}`);
   const [annotations, setAnnotation] = useState([
-    { localId: "0-19", start: 0, end: 19, tag: "GUIDE", color: "#dce391" },
+    // { localId: "0-19", start: 0, end: 19, tag: "GUIDE", color: "#dce391" },
   ]);
-  console.log(annotations, "annotations");
 
   const selectionHandler = ({ text, tag, content }) => {
     const { start, end } = findSubstringIndexes(content, text);
@@ -66,6 +67,24 @@ function DataSourceEntryContent({ onCancel, dataSourceEntry, open }) {
     }
   }, [dataSourceEntry]);
 
+  const onSave = () => {
+    console.log({ name, annotations, dataSourceEntry });
+    setLoading(true);
+    axios()
+      .post(`api/datasource_labels`, {
+        name,
+        labels: annotations,
+        data_source: dataSourceEntry.datasource.uuid,
+        // user_id: dataSourceEntry.datasource.owner.id,
+        user_id: 1,
+      })
+      .then((response) => {
+        console.log(response);
+        window.location.reload();
+      })
+      .finally(() => setLoading(false));
+  };
+
   return (
     <Drawer
       open={open}
@@ -88,11 +107,47 @@ function DataSourceEntryContent({ onCancel, dataSourceEntry, open }) {
           ))}
         </Stack>
 
+        {annotations.length > 0 && (
+          <Stack
+            direction={"row"}
+            gap={1}
+            sx={{ mb: "10px", mt: "10px", ml: "10px" }}
+          >
+            <TextField
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              id="standard-basic"
+              label="Name"
+              variant="standard"
+              sx={{
+                minWidth: "400px",
+              }}
+            />
+            <Button onClick={onSave} sx={{ alignSelf: "left" }}>
+              Save Labels
+            </Button>
+          </Stack>
+        )}
+
         <Divider />
         {loading ? (
           <CircularProgress />
         ) : (
           <div style={{ margin: "0px 10px" }}>
+            <Stack direction="row" gap={2}>
+              {Object.keys(TAG_COLORS).map((tag) => (
+                <Chip
+                  label={tag}
+                  size="small"
+                  key={tag}
+                  sx={{
+                    borderRadius: "10px",
+                    marginTop: "5px",
+                    backgroundColor: TAG_COLORS[tag],
+                  }}
+                />
+              ))}
+            </Stack>
             {data && (
               <>
                 <TextSelector

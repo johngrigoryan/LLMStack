@@ -5,6 +5,7 @@ from rest_framework import serializers
 from .models import DataSource
 from .models import DataSourceEntry
 from .models import DataSourceType
+from .models import DataSourceLabels
 from .types import DataSourceTypeFactory
 
 
@@ -81,3 +82,14 @@ class DataSourceEntrySerializer(serializers.ModelSerializer):
             'uuid', 'datasource', 'config',
             'name', 'size', 'status', 'created_at', 'updated_at', 'sync_config'
         ]
+
+
+class DataSourceLabelsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DataSourceLabels
+        fields = [
+            'uuid', 'data_source',
+            'data_source_name', 'labels', 'created_at', 'updated_at', 'labels', 'owner',
+            'labels_name', 'variables'
+        ]
+    
