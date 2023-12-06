@@ -17,6 +17,9 @@ import Paper from "@mui/material/Paper";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import { axios } from "../data/axios";
+import MuiAlert from "@mui/material/Alert";
+import Snackbar from "@mui/material/Snackbar";
+
 import TextAnnotator from "../components/TextAnotater";
 import TextSelector from "text-selection-react";
 import { TAGS } from "../components/datasource/DataSourceEntryContent";
@@ -53,6 +56,8 @@ function findSubstringIndexes(mainString, substring) {
 
 function Row(props) {
   const { row } = props;
+  const [isToastOpen, showToast] = useState(false);
+  const [successToast, setSuccessToast] = useState(false);
   const [isLabelingMode, setIsLabelingMode] = useState(false);
   const [open, setOpen] = useState(false);
   const [data, setData] = useState();
@@ -91,27 +96,76 @@ function Row(props) {
 
   const onSave = () => {
     console.log({ name, annotations, row });
+
+    // Check if key, value, and description are not empty for each variable
+    const validVars = vars.filter(
+      (v) =>
+        v.key.trim() !== "" &&
+        v.value.trim() !== "" &&
+        v.description.trim() !== "",
+    );
+
+    if (validVars.length !== vars.length) {
+      console.log("Invalid variables");
+      showToast(true);
+      return;
+    }
+
     axios()
       .put(`api/datasource_labels/${row.uuid}`, {
         name,
         labels: annotations,
         data_source: row.data_source,
         user_id: 1,
-        variables: vars.filter((v) => v.key && v.value),
+        variables: validVars,
       })
       .then((response) => {
         console.log(response.data.variables);
         setAnnotation(response.data.labels);
         setName(response.data.labels_name);
         setVars(response.data.variables);
+        setSuccessToast(true);
       })
       .finally(() => {
         setIsLabelingMode(false);
       });
   };
+  const handleClose = (event, reason) => {
+    if (reason === "clickaway") {
+      return;
+    }
+    showToast(false);
+  };
 
   return (
     <React.Fragment>
+      <Snackbar
+        open={isToastOpen}
+        autoHideDuration={3000}
+        onClose={handleClose}
+      >
+        <MuiAlert onClose={handleClose} severity="error" sx={{ width: "100%" }}>
+          All fields for variables must be filled out
+        </MuiAlert>
+      </Snackbar>
+      <Snackbar
+        open={successToast}
+        autoHideDuration={3000}
+        onClose={handleClose}
+      >
+        <MuiAlert
+          onClose={(event, reason) => {
+            if (reason === "clickaway") {
+              return;
+            }
+            setSuccessToast(false);
+          }}
+          severity="success"
+          sx={{ width: "100%" }}
+        >
+          Successfully saved
+        </MuiAlert>
+      </Snackbar>
       <TableRow
         hover
         onClick={() => setOpen(!open)}
@@ -252,7 +306,7 @@ function Row(props) {
                           <h3 key={v.key}>
                             <Chip label={v.key} /> : {v.value}
                           </h3>
-                          <p>{v.description}</p>
+                          <p>Description: {v.description}</p>
                         </Box>
                       ))}
                     </Stack>
