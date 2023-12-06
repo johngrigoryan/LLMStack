@@ -49,6 +49,18 @@ const dataSourcesFetchSelector = selector({
   },
 });
 
+const labeledDataSourcesFetchSelector = selector({
+  key: "labeledDataSourcesFetchSelector",
+  get: async () => {
+    try {
+      const dataSources = await axios().get("/api/datasource_labels");
+      return dataSources.data;
+    } catch (error) {
+      return [];
+    }
+  },
+});
+
 const dataSourceTypesFetchSelector = selector({
   key: "dataSourceTypesFetchSelector",
   get: async () => {
@@ -258,6 +270,11 @@ export const promptHubListState = selector({
 export const dataSourcesState = atom({
   key: "dataSourcesState",
   default: dataSourcesFetchSelector,
+});
+
+export const labeledDataSourcesState = atom({
+  key: "labeledDataSourcesState",
+  default: labeledDataSourcesFetchSelector,
 });
 
 export const orgDataSourcesState = selector({

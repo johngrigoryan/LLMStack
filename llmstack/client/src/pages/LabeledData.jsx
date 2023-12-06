@@ -25,6 +25,7 @@ import TextSelector from "text-selection-react";
 import { TAGS } from "../components/datasource/DataSourceEntryContent";
 import { TAG_COLORS } from "../components/datasource/DataSourceEntryContent";
 import { DeleteOutlined } from "@mui/icons-material";
+import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
 export default function LabeledData() {
   const [rows, setRows] = React.useState([]);
   useEffect(() => {
@@ -56,6 +57,8 @@ function findSubstringIndexes(mainString, substring) {
 
 function Row(props) {
   const { row } = props;
+  const [isDeleteConfirmationModalOpen, setDeleteConfirmationModalOpen] =
+    useState(false);
   const [isToastOpen, showToast] = useState(false);
   const [successToast, setSuccessToast] = useState(false);
   const [isLabelingMode, setIsLabelingMode] = useState(false);
@@ -97,7 +100,12 @@ function Row(props) {
   const onSave = () => {
     console.log({ name, annotations, row });
 
-    // Check if key, value, and description are not empty for each variable
+    if (annotations.length === 0) {
+      console.log("No annotations");
+      setDeleteConfirmationModalOpen(true);
+      return;
+    }
+
     const validVars = vars.filter(
       (v) =>
         v.key.trim() !== "" &&
@@ -135,6 +143,17 @@ function Row(props) {
       return;
     }
     showToast(false);
+  };
+  const onDelete = (id) => {
+    axios()
+      .delete(`api/datasource_labels/${id}`)
+      .then((response) => {
+        console.log(response);
+        window.location.reload();
+      })
+      .finally(() => {
+        setDeleteConfirmationModalOpen(false);
+      });
   };
 
   return (
@@ -191,6 +210,24 @@ function Row(props) {
           <Collapse in={open} timeout="auto" unmountOnExit>
             {data && (
               <Box sx={{ margin: 1 }}>
+                <DeleteConfirmationModal
+                  id={row.uuid}
+                  title="Delete Data Source Entry"
+                  text={
+                    <div>
+                      Are you sure you want to delete{" "}
+                      <span style={{ fontWeight: "bold" }}>
+                        {row.labels_name}
+                      </span>{" "}
+                      ?
+                    </div>
+                  }
+                  open={isDeleteConfirmationModalOpen}
+                  onOk={onDelete}
+                  onCancel={() => {
+                    setDeleteConfirmationModalOpen(false);
+                  }}
+                />
                 <Stack direction="row" sx={{ mb: "12px", mt: "12px" }}>
                   {isLabelingMode ? (
                     <TextField
@@ -206,26 +243,38 @@ function Row(props) {
                     </Typography>
                   )}
                   {!isLabelingMode && (
-                    <Button
-                      variant="contained"
-                      sx={{ ml: "10px" }}
-                      onClick={() => {
-                        setIsLabelingMode(true);
-                        if (row.variables && row.variables.length > 0) {
-                          setVars(row.variables);
-                        } else {
-                          setVars([
-                            {
-                              key: "",
-                              value: "",
-                              description: "",
-                            },
-                          ]);
-                        }
-                      }}
-                    >
-                      Edit
-                    </Button>
+                    <Stack direction="row" gap={1}>
+                      <Button
+                        variant="contained"
+                        sx={{ ml: "10px" }}
+                        onClick={() => {
+                          setIsLabelingMode(true);
+                          if (row.variables && row.variables.length > 0) {
+                            setVars(row.variables);
+                          } else {
+                            setVars([
+                              {
+                                key: "",
+                                value: "",
+                                description: "",
+                              },
+                            ]);
+                          }
+                        }}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant="contained"
+                        color="error"
+                        sx={{ ml: "10px" }}
+                        onClick={() => {
+                          setDeleteConfirmationModalOpen(true);
+                        }}
+                      >
+                        Delete
+                      </Button>
+                    </Stack>
                   )}
                 </Stack>
                 <h2>Variables</h2>
@@ -318,7 +367,7 @@ function Row(props) {
                     sx={{
                       mt: "50px",
                       mb: "10px",
-                      width: "400px",
+                      width: "620px",
                       justifyContent: "flex-end",
                     }}
                     direction="row"

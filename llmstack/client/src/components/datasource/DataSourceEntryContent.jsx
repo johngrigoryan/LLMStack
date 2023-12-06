@@ -13,12 +13,11 @@ import {
 import { axios } from "../../data/axios";
 import TextSelector from "text-selection-react";
 import TextAnnotator from "../TextAnotater";
-export const TAGS = ["GUIDE", "TROUBLESHOOTING", "ERROR", "SOLUTION"];
+export const TAGS = ["GUIDE", "TROUBLESHOOTING", "GENERAL"];
 export const TAG_COLORS = {
   GUIDE: "#dce391",
   TROUBLESHOOTING: "#84d2ff",
-  ERROR: "#c83f37",
-  SOLUTION: "#72c669",
+  GENERAL: "#72c669",
 };
 function findSubstringIndexes(mainString, substring) {
   const startIndex = mainString.indexOf(substring);
@@ -90,7 +89,7 @@ function DataSourceEntryContent({ onCancel, dataSourceEntry, open }) {
       open={open}
       onClose={onCancel}
       anchor="right"
-      sx={{ "& .MuiDrawer-paper": { maxWidth: "50%" }, maxWidth: "40%" }}
+      sx={{ "& .MuiDrawer-paper": { maxWidth: "50%" }, maxWidth: "50%" }}
     >
       <Box>
         <Stack direction={"row"} gap={1} sx={{ mb: "10px", mt: "10px" }}>
