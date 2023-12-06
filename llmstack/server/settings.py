@@ -29,9 +29,9 @@ PLAYWRIGHT_URL = f'ws://{RUNNER_HOST}:{RUNNER_PLAYWRIGHT_PORT}'
 
 CSRF_TRUSTED_ORIGINS = os.getenv(
     'CSRF_TRUSTED_ORIGINS',
-    f'http://127.0.0.1:{LLMSTACK_PORT},http://localhost:{LLMSTACK_PORT},http://localhost:3001/,http://localhost:3001,http://127.0.0.1:3001',
+    f'http://127.0.0.1:{LLMSTACK_PORT},http://localhost:{LLMSTACK_PORT}',
 ).split(',')
-print(CSRF_TRUSTED_ORIGINS)
+
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 CIPHER_KEY_SALT = os.getenv('CIPHER_KEY_SALT', None)
@@ -122,9 +122,7 @@ DATABASES = {
 
 VECTOR_DATABASES = {
     'default': {
-        'ENGINE': '{}'.format(
-            os.getenv('VECTOR_DATABASE_ENGINE', 'chroma'),
-        ),
+        'ENGINE': "chroma",
         'NAME': os.getenv('VECTOR_DATABASE_NAME', './llmstack.chromadb',),
         'HOST': os.getenv('VECTOR_DATABASE_HOST', 'http://weaviate:8080'),
         'USER': os.getenv('VECTOR_DATABASE_USERNAME', None),
@@ -315,7 +313,8 @@ WEAVIATE_TEXT2VEC_MODULE_CONFIG = {
 }
 WEAVIATE_EMBEDDINGS_API_RATE_LIMIT = 1000
 WEAVIATE_EMBEDDINGS_BATCH_SIZE = 50
-USE_CUSTOM_EMBEDDING = os.getenv('USE_CUSTOM_EMBEDDING', 'False') == 'True'
+# USE_CUSTOM_EMBEDDING = os.getenv('USE_CUSTOM_EMBEDDING', 'False') == 'True'
+USE_CUSTOM_EMBEDDING = False
 
 PLAYWRIGHT_URL = os.getenv('PLAYWRIGHT_URL', 'ws://playwright:30000/ws')
 
@@ -399,6 +398,13 @@ PROVIDERS = [
         'processor_exclude': [],
         'datasource_processors_exclude': [],
         'slug': 'openai',
+    },
+    {
+        'name': 'Custom',
+        'processor_packages': ['llmstack.processors.providers.custom'],
+        'processor_exclude': [],
+        'datasource_processors_exclude': [],
+        'slug': 'custom',
     },
     {
         'name': 'Promptly',

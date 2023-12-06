@@ -13,6 +13,36 @@ import weaviate
 logger = logging.getLogger(__name__)
 
 
+def add_labels_data_task(datasource, text: str, name: str, id_: str):
+    logger.info("Adding data to vectorstore")
+
+    datasource_entry_handler_cls = DataSourceTypeFactory.get_datasource_type_handler(
+        datasource.type,
+    )
+    datasource_entry_handler: DataSourceProcessor = datasource_entry_handler_cls(
+        datasource,
+    )
+
+    datasource_entry_handler.add_to_pinecone(text, name, id_)
+
+    return
+
+
+def update_labels_data_task(datasource, metadata: dict, name: str, id_: str, old_name: str):
+    logger.info("Updating data in vectorstore")
+
+    datasource_entry_handler_cls = DataSourceTypeFactory.get_datasource_type_handler(
+        datasource.type,
+    )
+    datasource_entry_handler: DataSourceProcessor = datasource_entry_handler_cls(
+        datasource,
+    )
+
+    datasource_entry_handler.update_document_in_pinecone(metadata, name, old_name, id_)
+
+    return
+
+
 def add_data_entry_task(datasource: DataSource, datasource_entry_items: List[DataSourceEntryItem]):
     logger.info(f'Adding data_source_entries')
 
@@ -165,8 +195,8 @@ def extract_urls_task(url):
             )
 
             urls = [
-                url,
-            ] + list(map(lambda entry: f'{protocol}://{domain}{entry}', paths)) + fq_urls
+                       url,
+                   ] + list(map(lambda entry: f'{protocol}://{domain}{entry}', paths)) + fq_urls
 
             # Make sure everything is a url
             urls = list(

@@ -1,6 +1,7 @@
 import logging
 import uuid
 import time
+import openai
 
 from django.shortcuts import get_object_or_404
 from concurrent.futures import Future
@@ -17,10 +18,11 @@ from .serializers import DataSourceEntrySerializer
 from .serializers import DataSourceSerializer
 from .serializers import DataSourceTypeSerializer
 from .serializers import DataSourceLabelsSerializer
-from llmstack.apps.tasks import add_data_entry_task, extract_urls_task, resync_data_entry_task, delete_data_entry_task, delete_data_source_task
+from llmstack.apps.tasks import add_data_entry_task, extract_urls_task, resync_data_entry_task, delete_data_entry_task, \
+    delete_data_source_task, add_labels_data_task, update_labels_data_task
 from llmstack.datasources.handlers.datasource_processor import DataSourceProcessor
 from llmstack.datasources.types import DataSourceTypeFactory
-from llmstack.jobs.adhoc import DataSourceEntryProcessingJob, ExtractURLJob
+from llmstack.jobs.adhoc import DataSourceEntryProcessingJob, ExtractURLJob, DataSourceLabelsProcessingJob
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +53,7 @@ class DataSourceEntryViewSet(viewsets.ModelViewSet):
             datasource__in=datasources,
         )
         return DRFResponse(DataSourceEntrySerializer(instance=datasource_entries, many=True).data)
-    
+
     def multiGet(self, request, uids):
         datasource_entries = DataSourceEntry.objects.filter(uuid__in=uids)
         return DRFResponse(DataSourceEntrySerializer(instance=datasource_entries, many=True).data)
@@ -109,8 +111,11 @@ class DataSourceViewSet(viewsets.ModelViewSet):
     def get(self, request, uid=None):
         if uid:
             # TODO: return data source entries along with the data source
-            return DRFResponse(DataSourceSerializer(instance=get_object_or_404(DataSource, uuid=uuid.UUID(uid), owner=request.user)).data)
-        return DRFResponse(DataSourceSerializer(instance=self.queryset.filter(owner=request.user).order_by('-updated_at'), many=True).data)
+            return DRFResponse(DataSourceSerializer(
+                instance=get_object_or_404(DataSource, uuid=uuid.UUID(uid), owner=request.user)).data)
+        return DRFResponse(
+            DataSourceSerializer(instance=self.queryset.filter(owner=request.user).order_by('-updated_at'),
+                                 many=True).data)
 
     def getEntries(self, request, uid):
         datasource = get_object_or_404(
@@ -181,7 +186,8 @@ class DataSourceViewSet(viewsets.ModelViewSet):
             return DRFResponse({'errors': ['Cannot add entry to external data source']}, status=400)
 
         entry_data = request.data['entry_data']
-        entry_metadata = dict(map(lambda x: (f'md_{x}', request.data['entry_metadata'][x]), request.data['entry_metadata'].keys())) if 'entry_metadata' in request.data else {
+        entry_metadata = dict(map(lambda x: (f'md_{x}', request.data['entry_metadata'][x]),
+                                  request.data['entry_metadata'].keys())) if 'entry_metadata' in request.data else {
         }
         if not entry_data:
             return DRFResponse({'errors': ['No entry_data provided']}, status=400)
@@ -279,9 +285,10 @@ class DataSourceLabelsViewSet(viewsets.ModelViewSet):
 
     def get(self, request, uid=None):
         if uid:
-            return DRFResponse(DataSourceLabelsSerializer(instance=get_object_or_404(DataSourceLabels, uuid=uuid.UUID(uid))).data)
+            return DRFResponse(
+                DataSourceLabelsSerializer(instance=get_object_or_404(DataSourceLabels, uuid=uuid.UUID(uid))).data)
         return DRFResponse(DataSourceLabelsSerializer(instance=self.queryset.order_by('-updated_at'), many=True).data)
-    
+
     def post(self, request):
         datasource = get_object_or_404(
             DataSource, uuid=uuid.UUID(request.data['data_source']),
@@ -289,6 +296,21 @@ class DataSourceLabelsViewSet(viewsets.ModelViewSet):
 
         print(request.data)
         print(request.user)
+        datasource_entry_object = DataSourceEntry.objects.filter(
+            datasource=datasource,
+        )[0]
+        datasource_type = datasource_entry_object.datasource.type
+        datasource_handler_cls = DataSourceTypeFactory.get_datasource_type_handler(
+            datasource_type,
+        )
+        datasource_handler = datasource_handler_cls(
+            datasource_entry_object.datasource,
+        )
+        _, content = datasource_handler.get_entry_text(
+            datasource_entry_object.config,
+        )
+        labels = request.data["labels"]
+        text = "\n".join([content[label["start"]: label["end"]] for label in labels if label["tag"] == "GUIDE"])
 
         datasource_labels = DataSourceLabels(
             data_source=datasource,
@@ -298,26 +320,67 @@ class DataSourceLabelsViewSet(viewsets.ModelViewSet):
             labels_name=request.data['name'],
         )
         datasource_labels.save()
-        return DRFResponse(DataSourceLabelsSerializer(instance=datasource_labels).data, status=201)
-    
+        try:
+            job = DataSourceLabelsProcessingJob.create(
+                func=add_labels_data_task, args=[
+                    datasource, text, request.data["name"], str(datasource_labels.uuid)
+                ],
+            ).add_to_queue()
+            return DRFResponse(DataSourceLabelsSerializer(instance=datasource_labels).data, status=201)
+        except Exception as e:
+            logger.error(f'Error while adding entry to data source: {e}')
+            return DRFResponse({'errors': [str(e)]}, status=500)
+
     def put(self, request, uid):
         datasource_labels = get_object_or_404(
             DataSourceLabels, uuid=uuid.UUID(uid),
         )
-        datasource_labels.labels = request.data['labels']
-        datasource_labels.labels_name = request.data['name']
-        if request.data['variables']:
-            datasource_labels.variables = request.data['variables']
+        datasource_entry_object = DataSourceEntry.objects.filter(
+            datasource=datasource_labels.data_source,
+        )[0]
+        datasource_type = datasource_entry_object.datasource.type
+        datasource_handler_cls = DataSourceTypeFactory.get_datasource_type_handler(
+            datasource_type,
+        )
+        datasource_handler = datasource_handler_cls(
+            datasource_entry_object.datasource,
+        )
+        _, content = datasource_handler.get_entry_text(
+            datasource_entry_object.config,
+        )
+        labels = request.data["labels"]
+        text = "\n".join([content[label["start"]: label["end"]] for label in labels if label["tag"] == "GUIDE"])
+        datasource_labels.labels = labels
+        old_name = datasource_labels.labels_name
+        name = request.data['name']
+        datasource_labels.labels_name = name
+        variables = request.data['variables']
+        if variables:
+            datasource_labels.variables = variables
+        metadata = {"data": text}
+        for variable in variables:
+            print(variable)
+            metadata[variable["key"]] = [variable["value"], variable["description"]]
         datasource_labels.save()
-        return DRFResponse(DataSourceLabelsSerializer(instance=datasource_labels).data, status=200)
-    
+
+        try:
+            job = DataSourceLabelsProcessingJob.create(
+                func=update_labels_data_task, args=[
+                    datasource_labels.data_source, metadata, name, uid, old_name
+                ],
+            ).add_to_queue()
+            return DRFResponse(DataSourceLabelsSerializer(instance=datasource_labels).data, status=200)
+        except Exception as e:
+            logger.error(f'Error while adding entry to data source: {e}')
+            return DRFResponse({'errors': [str(e)]}, status=500)
+
     def delete(self, request, uid):
         datasource_labels = get_object_or_404(
             DataSourceLabels, uuid=uuid.UUID(uid),
         )
         datasource_labels.delete()
         return DRFResponse(status=204)
-    
+
     def getTextContent(self, request, uid):
         datasource_labels = get_object_or_404(
             DataSourceLabels, uuid=uuid.UUID(uid),
@@ -336,9 +399,9 @@ class DataSourceLabelsViewSet(viewsets.ModelViewSet):
             datasource_entry_object.config,
         )
         return DRFResponse({'content': content, 'metadata': metadata})
-        
+
         # return DRFResponse(DataSourceEntrySerializer(instance=datasource_entries, many=False).data)
-    
+
     def add_entry(self, request, uid):
         datasource_labels = get_object_or_404(
             DataSourceLabels, uuid=uuid.UUID(uid),
@@ -348,7 +411,8 @@ class DataSourceLabelsViewSet(viewsets.ModelViewSet):
             return DRFResponse({'errors': ['Cannot add entry to external data source']}, status=400)
 
         entry_data = request.data['entry_data']
-        entry_metadata = dict(map(lambda x: (f'md_{x}', request.data['entry_metadata'][x]), request.data['entry_metadata'].keys())) if 'entry_metadata' in request.data else {
+        entry_metadata = dict(map(lambda x: (f'md_{x}', request.data['entry_metadata'][x]),
+                                  request.data['entry_metadata'].keys())) if 'entry_metadata' in request.data else {
         }
         if not entry_data:
             return DRFResponse({'errors': ['No entry_data provided']}, status=400)
@@ -400,5 +464,4 @@ class DataSourceLabelsViewSet(viewsets.ModelViewSet):
             return DRFResponse({'success': True}, status=202)
         except Exception as e:
             logger.error(f'Error while adding entry to data source: {e}')
-            return DR
-    
+            return DRFResponse({'errors': [str(e)]}, status=500)

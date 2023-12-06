@@ -62,3 +62,9 @@ class ExtractURLJob(ProcessingJob):
     @classmethod
     def generate_job_id(cls):
         return '{}'.format(str(uuid.uuid4()))
+
+
+class DataSourceLabelsProcessingJob(ProcessingJob):
+    @classmethod
+    def generate_job_id(cls):
+        return "{}".format(str(uuid.uuid4()))

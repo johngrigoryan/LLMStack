@@ -12,6 +12,7 @@ from pydantic import BaseModel
 from llmstack.common.blocks.base.schema import BaseSchema as _Schema
 from llmstack.common.blocks.base.processor import ProcessorInterface, BaseInputType
 from llmstack.common.blocks.data.store.vectorstore.chroma import Chroma
+from llmstack.common.blocks.data.store.vectorstore.pinecone import Pinecone
 from llmstack.common.blocks.embeddings.openai_embedding import EmbeddingAPIProvider
 from llmstack.common.blocks.embeddings.openai_embedding import OpenAIEmbeddingConfiguration
 from llmstack.common.blocks.embeddings.openai_embedding import OpenAIEmbeddingInput
@@ -38,11 +39,12 @@ class DataSourceSchema(_Schema):
     """
     This is Base Schema model for all data source type schemas
     """
-    @ staticmethod
+
+    @staticmethod
     def get_vector_fields() -> list:
         raise NotImplementedError
 
-    @ staticmethod
+    @staticmethod
     def get_content_key() -> str:
         raise NotImplementedError
 
@@ -108,7 +110,7 @@ class DataSourceProcessor(ProcessorInterface[BaseInputType, None, None]):
         embedding_endpoint_configuration = None
 
         default_vector_database = settings.VECTOR_DATABASES.get('default')['ENGINE']
-        
+
         if default_vector_database == 'weaviate':
             if vectorstore_embedding_endpoint == VectorstoreEmbeddingEndpoint.OPEN_AI:
                 promptly_weaviate = PromptlyWeaviate(
@@ -202,17 +204,48 @@ class DataSourceProcessor(ProcessorInterface[BaseInputType, None, None]):
         logger.info(f'Added {len(document_ids)} documents to vectorstore.')
         return data.copy(update={'config': {'document_ids': document_ids}, 'size': 1536 * 4 * len(document_ids)})
 
+    def add_to_pinecone(self, text, name, id_):
+        client = Pinecone()
+        client.get_or_create_index("imea-index", schema="")
+        embeddings_endpoint = OpenAIEmbeddingsProcessor()
+        embedding_endpoint_configuration = OpenAIEmbeddingConfiguration(
+            api_type=EmbeddingAPIProvider.OPENAI,
+            model='text-embedding-ada-002',
+            api_key=self.profile.get_vendor_key('openai_key'),
+        )
+
+        document = Document(page_content=text, page_content_key="data", metadata={},
+                            embeddings=embeddings_endpoint.process(OpenAIEmbeddingInput(text=name),
+                                                                   embedding_endpoint_configuration).embeddings)
+        client.add_text("imea-index", document, id_=id_)
+
+    def update_document_in_pinecone(self, metadata, name, old_name, id_):
+        client = Pinecone()
+        client.get_or_create_index("imea-index", schema="")
+        embeddings = None
+        if old_name != name:
+            embeddings_endpoint = OpenAIEmbeddingsProcessor()
+            embedding_endpoint_configuration = OpenAIEmbeddingConfiguration(
+                api_type=EmbeddingAPIProvider.OPENAI,
+                model='text-embedding-ada-002',
+                api_key=self.profile.get_vendor_key('openai_key'),
+            )
+            embeddings = embeddings_endpoint.process(OpenAIEmbeddingInput(text=name),
+                                                     embedding_endpoint_configuration).embeddings
+        client.update_document("imea-index", id_, metadata=metadata, embeddings=embeddings)
+
     def search(self, query: str, use_hybrid_search=True, **kwargs) -> List[dict]:
         if use_hybrid_search:
             return self.hybrid_search(query, **kwargs)
         else:
             return self.similarity_search(query, **kwargs)
-        
+
     def similarity_search(self, query: str, **kwargs) -> List[dict]:
 
         document_query = DocumentQuery(
             query=query, page_content_key=self.get_content_key(
-            ), limit=kwargs.get('limit', 2), metadata={'additional_properties': ['source']}, search_filters=kwargs.get('search_filters', None),
+            ), limit=kwargs.get('limit', 2), metadata={'additional_properties': ['source']},
+            search_filters=kwargs.get('search_filters', None),
         )
 
         return self.vectorstore.similarity_search(
@@ -222,7 +255,8 @@ class DataSourceProcessor(ProcessorInterface[BaseInputType, None, None]):
     def hybrid_search(self, query: str, **kwargs) -> List[dict]:
         document_query = DocumentQuery(
             query=query, page_content_key=self.get_content_key(
-            ), limit=kwargs.get('limit', 2), metadata={'additional_properties': ['source']}, search_filters=kwargs.get('search_filters', None), alpha=kwargs.get('alpha', 0.75),
+            ), limit=kwargs.get('limit', 2), metadata={'additional_properties': ['source']},
+            search_filters=kwargs.get('search_filters', None), alpha=kwargs.get('alpha', 0.75),
         )
         return self.vectorstore.hybrid_search(
             index_name=self.datasource_class_name, document_query=document_query, **kwargs,
