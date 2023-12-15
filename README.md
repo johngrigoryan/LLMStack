@@ -8,16 +8,6 @@
     <a href="https://llmstack.ai/docs/getting-started/introduction#quickstart" target="_blank">Quickstart</a> | <a href="https://llmstack.ai/docs/" target="_blank">Documentation</a> | <a href="trypromptly.com" target="_blank">Promptly</a>
 </p>
 
-## Overview
-
-Build tailor-made generative AI applications, chatbots and agents that cater to your unique needs by chaining multiple LLMs. Seamlessly integrate your own data and GPT-powered models without any coding experience using LLMStack's no-code builder. Trigger your AI chains from Slack or Discord. Deploy to the cloud or on-premise.
-
-![llmstack-quickstart](https://github.com/trypromptly/LLMStack/assets/431988/72de45f5-23f9-4cd3-91b0-7d5ae97534c3)
-
-<p align="center">
-  <em>See full demo video <a href="https://youtu.be/8icy1Ccs2lk" target="_blank">here</a></em>
-</p>
-
 ## Getting Started
 
 **_Check out our Cloud offering at [Promptly](https://trypromptly.com) or follow the instructions below to deploy LLMStack on your own infrastructure._**
@@ -26,32 +16,37 @@ LLMStack deployment comes with a default admin account whose credentials are `ad
 
 ### Installation
 
-Install LLMStack using pip:
-
-```sh
-pip install llmstack
-```
-
 > If you are on windows, please use WSL2 (Windows Subsystem for Linux) to install LLMStack. You can follow the instructions [here](https://docs.microsoft.com/en-us/windows/wsl/install-win10) to install WSL2. Once you are in a WSL2 terminal, you can install LLMStack using the above command.
 
-Start LLMStack using the following command:
+You need to clone the repository to your device.
 
 ```sh
-llmstack
+git clone git@github.com:johngrigoryan/LLMStack.git
 ```
 
 Above commands will install and start LLMStack. It will create `.llmstack` in your home directory and places the database and config files in it when run for the first time. Once LLMStack is up and running, it should automatically open your browser and point it to [localhost:3000](http://localhost:3000).
 
 > You can add your own keys to providers like OpenAI, Cohere, Stability etc., from Settings page. If you want to provide default keys for all the users of your LLMStack instance, you can add them to the `~/.llmstack/config` file.
 
-<div>
-  <a href="https://www.loom.com/share/1399a39c19394d9cad224e2e62c15285">
-    <p>LLMStack: Quickstart video</p>
-  </a>  
-  <a href="https://www.loom.com/share/1399a39c19394d9cad224e2e62c15285">
-    <img style="max-width:828px;" src="https://cdn.loom.com/sessions/thumbnails/1399a39c19394d9cad224e2e62c15285-with-play.gif">
-  </a>
-</div>
+## Running locally and Development
+
+```bash
+cd llmstack/client
+npm install
+npm run build
+cd ../..
+python3 -m pip install poetry
+poetry install
+poetry shell
+llmstack
+```
+
+> You can skip running `npm install` and `npm run build` if you have already built the client before
+
+For frontend development, you can use `REACT_APP_API_SERVER=localhost:3000 npm start` to start the development server in client directory. You can also use `npm run build` to build the frontend and serve it from the backend server.
+
+To update documentation, make changes to `web/docs` directory and run `npm run build` in web directory to build the documentation. You can use `npm start` in web directory to serve the documentation locally.
+
 
 ## Features
 
@@ -94,26 +89,3 @@ Check out our cloud offering at [Promptly](https://trypromptly.com). You can sig
 ## Documentation
 
 Check out our documentation at [llmstack.ai/docs](https://llmstack.ai/docs/) to learn more about LLMStack.
-
-## Development
-
-```bash
-cd client
-npm install
-npm run build
-cd ..
-pip install poetry
-poetry install
-poetry shell
-llmstack
-```
-
-> You can skip running `npm install` and `npm run build` if you have already built the client before
-
-For frontend development, you can use `REACT_APP_API_SERVER=localhost:3000 npm start` to start the development server in client directory. You can also use `npm run build` to build the frontend and serve it from the backend server.
-
-To update documentation, make changes to `web/docs` directory and run `npm run build` in web directory to build the documentation. You can use `npm start` in web directory to serve the documentation locally.
-
-## Contributing
-
-We welcome contributions to LLMStack. Please check out our [contributing guide](https://llmstack.ai/docs/guides/contributing) to learn more about how you can contribute to LLMStack.
