@@ -48,6 +48,22 @@ For frontend development, you can use `REACT_APP_API_SERVER=localhost:3000 npm s
 To update documentation, make changes to `web/docs` directory and run `npm run build` in web directory to build the documentation. You can use `npm start` in web directory to serve the documentation locally.
 
 
+## Docker
+To build the docker image
+
+```bash
+./build.sh
+```
+To run the container
+
+```bash
+docker run -d -p 3000:3000 llmstack
+```
+
+Once the docker image is built and running, you can access LLMStack on [localhost:3000](http://127.0.0.1:3000).
+
+The container will create a default user with username **admin** and password **promptly**. If you want to change the credentials of the default user, before building the image, go to the **.llmstack/config** file, and update the fields **admin_username** and **admin_password**. Once the docker image has been built, the credentials can be changed from the [admin page](http://127.0.0.1:3000/admin/).
+
 ## Features
 
 **🔗 Chain multiple models**: LLMStack allows you to chain multiple LLMs together to build complex generative AI applications.
