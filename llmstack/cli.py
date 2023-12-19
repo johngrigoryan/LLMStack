@@ -200,7 +200,7 @@ def main():
     if len(sys.argv) > 1 and sys.argv[1] == 'runserver':
         print('Starting LLMStack')
         run_server_command = ['manage.py',
-                              'runserver', os.environ['LLMSTACK_PORT']]
+                              'runserver', "0.0.0.0:3000"]
         if 'windows' in platform.platform().lower():
             run_server_command.append('--noreload')
         run_django_command(
@@ -218,16 +218,16 @@ def main():
     run_django_command(['manage.py', 'clearcache'])
 
     # Install default playwright browsers
-    subprocess.run(['playwright', 'install', 'chromium'])
+    # subprocess.run(['playwright', 'install', 'chromium'])
 
     # Start llmstack-runner container in a separate thread
-    import threading
-    runner_thread = threading.Thread(
-        target=start_runner, args=([runner_environment]))
-    runner_thread.start()
+    # import threading
+    # runner_thread = threading.Thread(
+    #     target=start_runner, args=([runner_environment]))
+    # runner_thread.start()
 
     # Run llmstack runserver in a separate process
-    server_process = subprocess.Popen(['llmstack', 'runserver'])
+    server_process = subprocess.Popen(['llmstack', 'runserver', '0.0.0.0:3000'])
 
     # Wait for server to be up at LLMSTACK_PORT and open browser
     import time

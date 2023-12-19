@@ -13,13 +13,14 @@ SECRET_KEY = os.getenv(
 )
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'False') == 'True'
+# DEBUG = os.getenv('DEBUG', 'False') == 'True'
+DEBUG = True
 
-ALLOWED_HOSTS = os.getenv(
-    'ALLOWED_HOSTS',
-    '127.0.0.1,localhost',
-).split(',')
-
+# ALLOWED_HOSTS = os.getenv(
+#     'ALLOWED_HOSTS',
+#     '127.0.0.1,localhost',
+# ).split(',')
+ALLOWED_HOSTS = ['*']
 LLMSTACK_PORT = os.getenv('LLMSTACK_PORT', 3000)
 
 RUNNER_HOST = os.getenv('RUNNER_HOST', 'localhost')
@@ -39,7 +40,7 @@ CIPHER_KEY_SALT = os.getenv('CIPHER_KEY_SALT', None)
 ADMIN_ENABLED = os.getenv('ADMIN_ENABLED', True)
 
 DATA_UPLOAD_MAX_MEMORY_SIZE = os.getenv(
-    'DATA_UPLOAD_MAX_MEMORY_SIZE', 26214400,
+    'DATA_UPLOAD_MAX_MEMORY_SIZE', 26214400,    
 )  # 25MB default
 
 # Application definition
