@@ -33,6 +33,8 @@ COPY .llmstack /root/.llmstack
 # Install dependencies
 RUN poetry install --no-interaction --no-ansi
 
+RUN pip3 install transformers[torch]
+
 # Set up entry point and expose port
 RUN chmod +x /code/docker-entrypoint.sh
 EXPOSE 3000
